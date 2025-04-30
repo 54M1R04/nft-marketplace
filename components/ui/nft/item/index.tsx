@@ -1,18 +1,39 @@
 /* eslint-disable @next/next/no-img-element */
 
-import { FunctionComponent } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import { NftMeta, Nft } from "../../../../types/nft";
 
 type NftItemProps = {
   item: Nft;
   buyNft: (token: number, value: number) => Promise<void>;
-}
+};
 
 function shortifyAddress(address: string) {
-  return `0x****${address.slice(-4)}`
+  return `0x****${address.slice(-4)}`;
 }
 
-const NftItem: FunctionComponent<NftItemProps> = ({item, buyNft}) => {
+const NftItem: FunctionComponent<NftItemProps> = ({ item, buyNft }) => {
+  const [avatarUrl, setAvatarUrl] = useState<string>("/images/default_avatar.png");
+
+  // Fetch the creator's avatar URL from the backend
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      try {
+        const response = await fetch(`/api/get-user?email=${item.creator}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAvatarUrl(data.avatarUrl || "/images/default_avatar.png"); // Use the uploaded avatar or fallback to default
+        } else {
+          console.error("Failed to fetch avatar URL");
+        }
+      } catch (error) {
+        console.error("Error fetching avatar:", error);
+      }
+    };
+
+    fetchAvatar();
+  }, [item.creator]);
+
   return (
     <>
       <div className="flex-shrink-0">
@@ -29,18 +50,20 @@ const NftItem: FunctionComponent<NftItemProps> = ({item, buyNft}) => {
               <div>
                 <img
                   className="inline-block h-9 w-9 rounded-full"
-                  src="/images/default_avatar.png"
-                  alt=""
+                  src={avatarUrl} // Dynamically set the avatar URL
+                  alt="Creator Avatar"
                 />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Creator</p>
-                <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">{shortifyAddress(item.creator)}</p>
+                <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                  Creator
+                </p>
+                <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
+                  {shortifyAddress(item.creator)}
+                </p>
               </div>
             </div>
-            <p className="text-sm font-medium text-indigo-600">
-              Creatures NFT
-            </p>
+            <p className="text-sm font-medium text-indigo-600">Creatures NFT</p>
           </div>
           <div className="block mt-2">
             <p className="text-xl font-semibold text-gray-900">{item.meta.name}</p>
@@ -54,11 +77,11 @@ const NftItem: FunctionComponent<NftItemProps> = ({item, buyNft}) => {
               <dd className="order-1 text-xl font-extrabold text-indigo-600">
                 <div className="flex justify-center items-center">
                   {item.price}
-                  <img className="h-6" src="/images/small-eth.webp" alt="ether icon"/>
+                  <img className="h-6" src="/images/small-eth.webp" alt="ether icon" />
                 </div>
               </dd>
             </div>
-            { item.meta.attributes.map(attribute =>
+            {item.meta.attributes.map((attribute) => (
               <div key={attribute.trait_type} className="flex flex-col px-4 pt-4">
                 <dt className="order-2 text-sm font-medium text-gray-500">
                   {attribute.trait_type}
@@ -67,7 +90,7 @@ const NftItem: FunctionComponent<NftItemProps> = ({item, buyNft}) => {
                   {attribute.value}
                 </dd>
               </div>
-            )}
+            ))}
           </dl>
         </div>
         <div>
@@ -89,7 +112,7 @@ const NftItem: FunctionComponent<NftItemProps> = ({item, buyNft}) => {
         </div>
       </div>
     </>
-  )
-}
+  );
+};
 
 export default NftItem;
